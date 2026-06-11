@@ -1,0 +1,1774 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced School Management Software - Nahush Public High School mohla </title>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #0d47a1;
+            --primary-dark: #002171;
+            --secondary: #2e7d32;
+            --danger: #c62828;
+            --warning: #ef6c00;
+            --light-bg: #f4f6f9;
+            --sidebar-width: 280px;
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { margin: 0; padding: 0; background-color: var(--light-bg); background-size: cover; background-position: center; background-attachment: fixed; }
+        
+        /* LOGIN LAYOUT */
+        .login-container { display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #0d47a1 0%, #002171 100%); }
+        .login-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 100%; max-width: 400px; text-align: center; }
+        .login-card h2 { margin-bottom: 25px; color: var(--primary); }
+        .login-card input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
+        .login-card button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; }
+        .login-card button:hover { background: var(--primary-dark); }
+
+        /* DASHBOARD LAYOUT */
+        .wrapper { display: none; min-height: 100vh; }
+        .sidebar { width: var(--sidebar-width); background: #1a237e; color: white; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+        .sidebar-header { padding: 20px; text-align: center; background: #0f1663; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-header img { max-width: 80px; border-radius: 50%; background: white; padding: 5px; }
+        .sidebar-header h3 { margin: 10px 0 5px 0; font-size: 16px; }
+        .menu-grp { padding: 15px 0; flex-grow: 1; overflow-y: auto; }
+        .menu-btn { width: 100%; border: none; background: none; padding: 12px 20px; color: #cfd8dc; text-align: left; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.3s; }
+        .menu-btn:hover, .menu-btn.active { background: rgba(255,255,255,0.1); color: white; font-weight: bold; border-left: 4px solid #fff; }
+        
+        .main-content { flex-grow: 1; padding: 25px; overflow-y: auto; }
+        .top-navbar { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .top-navbar h2 { margin: 0; color: var(--primary); font-size: 20px; }
+
+        /* CARDS & TABLES */
+        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .card h3 { margin-top: 0; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #555; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        
+        .action-btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 4px; font-size: 14px; cursor: pointer; font-weight: bold; }
+        .action-btn:hover { opacity: 0.9; }
+
+        .widget { padding: 20px; border-radius: 8px; color: white; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        table th, table td { border: 1px solid #e0e0e0; padding: 12px; text-align: left; }
+        table th { background-color: #f5f5f5; color: #333; font-weight: 600; }
+        table tr:nth-child(even) { background-color: #fafafa; }
+        
+        .edit-btn { background: #ffb300; border: none; color: black; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .delete-btn { background: var(--danger); border: none; color: white; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* LOADING INDICATOR STYLING */
+        #globalLoader { display: none; position: fixed; top: 15px; right: 15px; background: #ff6f00; color: white; padding: 10px 20px; border-radius: 4px; font-weight: bold; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 9999; font-size: 13px; }
+
+        /* MODAL SCREEN */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fff; margin: 5% auto; padding: 25px; border-radius: 8px; width: 100%; max-width: 650px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; }
+        .close { position: absolute; right: 20px; top: 15px; font-size: 28px; font-weight: bold; cursor: pointer; color: #aaa; }
+        .close:hover { color: black; }
+
+        .clickable-roll { color: var(--primary); text-decoration: underline; font-weight: bold; cursor: pointer; }
+        .clickable-roll:hover { color: var(--warning); }
+
+        @media print {
+            body * { visibility: hidden; }
+            #modalReceiptBody, #modalReceiptBody * { visibility: visible; }
+            #modalReceiptBody { position: absolute; left: 0; top: 0; width: 100%; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body onload="checkLoginStatus()">
+
+<div id="globalLoader">☁️ क्लाउड से डेटा सिंक हो रहा है...</div>
+
+<div id="loginSection" class="login-container">
+    <div class="login-card">
+        <h2>Nahush Public High School Mohla</h2>
+        <p>fees manegment system</p>
+        <p>आपका हार्दिक स्वागत है </p>
+        <p style="color:#0d47a1; margin-top:-15px; margin-bottom:20px; font-size:13px; font-weight: bold;">Advanced Admin Panel Suite</p>
+        <input type="text" id="username" placeholder="यूज़र आईडी (Username)" autocomplete="off">
+        <input type="password" id="password" placeholder="पासवर्ड (Password)">
+        <button onclick="login()">प्रवेश करें (Login)</button>
+    </div>
+</div>
+
+<div id="dashboardWrapper" class="wrapper">
+    <div class="sidebar no-print">
+        <div class="sidebar-header">
+            <img id="schoolLogo" src="https://via.placeholder.com/80" alt="Logo">
+            <h3>नहुष पब्लिक हाई स्कूल मोहला</h3>
+            <small style="color:#b0bec5;">तहसील मझौली जिला जबलपुर म.प्र.</small>
+        </div>
+        <div class="menu-grp">
+            <button id="btn-tab-registration" class="menu-btn active" onclick="switchTab(event, 'tab-registration')">📝 नवीन छात्र पंजीकरण</button>
+            <button id="btn-tab-feeentry" class="menu-btn" onclick="switchTab(event, 'tab-feeentry')">💰 छात्र फीस प्रविष्टि काउंटर</button>
+            <button id="btn-tab-database" class="menu-btn" onclick="switchTab(event, 'tab-database')">📊 छात्र डेटाबेस एवं लाइव बकाया</button>
+            <button id="btn-tab-masterdb" class="menu-btn" onclick="switchTab(event, 'tab-masterdb')">🗂️ ऑल-टाइम मास्टर फीस लॉग्स</button>
+            <button id="btn-tab-dailyreport" class="menu-btn" onclick="switchTab(event, 'tab-dailyreport')">📆 दैनिक/मासिक संकलन विवरण</button>
+            <button id="btn-tab-statement" class="menu-btn" onclick="switchTab(event, 'tab-statement')">🔍 MASTER STATEMENT</button>
+            <button id="btn-tab-expenses" class="menu-btn" onclick="switchTab(event, 'tab-expenses')">🏫 विद्यालय सामान्य खर्च रजिस्टर</button>
+            <button id="btn-tab-paybill" class="menu-btn" onclick="switchTab(event, 'tab-paybill')">🛠️ शिक्षक वास्तविक पेबिल जनरेशन</button>
+            <button id="btn-tab-teachers" class="menu-btn" onclick="switchTab(event, 'tab-teachers')">🧑‍🏫 शिक्षक वेतन वाउचर प्रविष्टि</button>
+            <button id="btn-tab-audit" class="menu-btn" onclick="switchTab(event, 'tab-audit')">📈 ऑडिट रिपोर्ट (आय-व्यय शीट)</button>
+            <button id="btn-tab-settings" class="menu-btn" onclick="switchTab(event, 'tab-settings')">⚙️  सॉफ्टवेयर सेटिंग्स कस्टमाइजेशन</button>
+        </div>
+        <div style="padding: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <button onclick="logout()" style="width:100%; padding:10px; background:var(--danger); color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">🔓  लॉगआउट (Logout)</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="top-navbar no-print">
+            <h2 id="dynamicPageTitle">NAHUSH PUBLIC HIGH SCHOOL MOHLA DISE CODE -23390302804 </h2>
+            <div><strong>सत्र:</strong> 2026-27 | <strong>यूज़र:</strong> "RAM" | <button onclick="refreshAllDataFromServer()" style="background:var(--warning); color:white; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-weight:bold;">🔄  रीलोड लाइव डेटा</button></div>
+        </div>
+
+        <div id="tab-registration" class="tab-content active">
+            <div class="card">
+                <h3>📝 नए छात्र का पंजीकरण फॉर्म (Student Enrollment Form)</h3>
+                <div class="grid-3">
+                    <div class="form-group"><label>स्कॉलर/रोल नंबर (अनुक्रमांक) *</label><input type="text" id="regRollNo"></div>
+                    <div class="form-group"><label>छात्र का पूरा नाम *</label><input type="text" id="regStudentName"></div>
+                    <div class="form-group"><label>पिता का नाम</label><input type="text" id="regFatherName"></div>
+                    <div class="form-group">
+                        <label>कक्षा (Class) *</label>
+                        <select id="regClass">
+                            <option value="">कक्षा चुनिए...</option>
+                            <option value="LKG">LKG</option>
+                            <option value="UKG">UKG</option>
+                            <script>for(let i=1;i<=12;i++) document.write(`<option value="${i}">कक्षा ${i} वीं</option>`);</script>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>ग्राम/शहर का नाम</label><input type="text" id="regVillage"></div>
+                    <div class="form-group"><label>अभिभावक मोबाइल नंबर</label><input type="text" id="regMobile" maxlength="10"></div>
+                </div>
+                <h4 style="margin-top:20px; color:var(--primary);">💰 निर्धारित वार्षिक फीस संरचना विवरण (सत्रवार आबंटन)</h4>
+                <div class="grid-4">
+                    <div class="form-group"><label>शिक्षण शुल्क/वार्षिक फीस (₹)</label><input type="number" id="regAnnualFee" oninput="calculateRegTotal()"></div>
+                    <div class="form-group"><label>वाहन/बस फीस (₹)</label><input type="number" id="regBusFee" oninput="calculateRegTotal()"></div>
+                    <div class="form-group"><label>पूर्व वर्ष की शेष बकाया राशि (₹)</label><input type="number" id="regOutstandingFee" oninput="calculateRegTotal()"></div>
+                    <div class="form-group"><label>कुल आवंटित महायोग फीस (₹)</label><input type="number" id="regTotalFee" readonly style="background:#eef2f3; font-weight:bold;"></div>
+                </div>
+                <button class="action-btn" onclick="registerStudent()" style="background:var(--secondary); padding:12px 30px; margin-top:10px;">💾 छात्र रिकॉर्ड सुरक्षित करें (Register)</button>
+            </div>
+        </div>
+
+        <div id="tab-feeentry" class="tab-content">
+            <div class="card">
+                <h3>💰 लाइव छात्र फीस प्रविष्टि वाउचर (Student Fee Entry Counter)</h3>
+                <div class="grid-3" style="align-items: flex-end;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>छात्र का स्कॉलर/रोल नंबर दर्ज करें</label>
+                        <input type="text" id="feeRollNo" placeholder="Enter Roll Number" oninput="fetchStudentDetails(this.value)">
+                    </div>
+                    <button class="action-btn" onclick="resetForm()" style="background:#757575;">🔄 रीसेट / क्लियर फॉर्म</button>
+                </div>
+
+                <div id="liveLedgerSection" style="display:none; margin-top:25px; border-top:2px solid #ddd; padding-top:20px;">
+                    <div class="grid-3" id="ledgerSummaryWidgets" style="margin-bottom:20px;"></div>
+                    <div class="grid-3">
+                        <div class="form-group"><label>छात्र का नाम</label><input type="text" id="studentName" readonly style="background:#f5f5f5;"></div>
+                        <div class="form-group"><label>पिता का नाम</label><input type="text" id="fatherName" readonly style="background:#f5f5f5;"></div>
+                        <div class="form-group"><label>कक्षा</label><input type="text" id="studentClass" readonly style="background:#f5f5f5;"></div>
+                    </div>
+                    <div class="grid-3" style="background:#f1f8e9; padding:15px; border-radius:6px; margin-bottom:15px;">
+                        <div class="form-group"><label>आज जमा की जाने वाली राशि (₹) *</label><input type="number" id="paidFee" style="border:2px solid var(--secondary); font-weight:bold; font-size:16px;"></div>
+                        <div class="form-group">
+                            <label>भुगतान माध्यम (Mode) *</label>
+                            <select id="paymentMode">
+                                <option value="Cash">नकद (Cash)</option>
+                                <option value="Online">ऑनलाइन यूपीआई/नेटबैंकिंग (Online)</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>भुगतान तिथि (Date)</label><input type="date" id="payDate"></div>
+                    </div>
+                    <button class="action-btn" onclick="saveRecord()" style="background:var(--primary); padding:12px 30px; width:100%; font-size:16px;">🖨️ फीस जमा करें एवं रसीद प्रिंट करें (Submit & Print)</button>
+
+                    <h4 style="margin-top:25px; color:#333;">📋 छात्र की पूर्व फीस पावती इतिहास (Ledger Account History)</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>दिनांक</th>
+                                <th>रसीद क्रमांक</th>
+                                <th>माध्यम</th>
+                                <th>जमा राशि</th>
+                                <th>शेष बकाया राशि</th>
+                            </tr>
+                        </thead>
+                        <tbody id="liveLedgerTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-database" class="tab-content">
+            <div class="card">
+                <h3>📊 छात्र डेटाबेस प्रबंधन एवं लाइव बकाया ट्रैकर (Dues Balanced Sorted)</h3>
+                <div style="display:flex; gap:15px; margin-bottom:20px; align-items:flex-end;">
+                    <div class="form-group" style="margin-bottom:0; flex-grow:1;"><label>छात्र का नाम या रोल नंबर खोजें</label><input type="text" id="dbSearchBox" placeholder="खोजें..." oninput="loadStudentsLive()"></div>
+                    <div class="form-group" style="margin-bottom:0; width:200px;">
+                        <label>कक्षा अनुसार फिल्टर</label>
+                        <select id="dbClassFilter" onchange="loadStudentsLive()">
+                            <option value="">सभी कक्षाएं</option>
+                            <option value="LKG">LKG</option>
+                            <option value="UKG">UKG</option>
+                            <script>for(let i=1;i<=12;i++) document.write(`<option value="${i}">कक्षा ${i}</option>`);</script>
+                        </select>
+                    </div>
+                    <button class="action-btn" onclick="exportStudentsToExcel()" style="background:#1565c0;">📥 Excel डाउनलोड</button>
+                    <button class="action-btn" onclick="document.getElementById('excelFileInput').click()" style="background:#2e7d32;">📤 Excel अपलोड</button>
+                    <input type="file" id="excelFileInput" accept=".xlsx, .xls" style="display:none;" onchange="importStudentsFromExcel(event)">
+                    <button class="action-btn" onclick="deleteAllStudents()" style="background:var(--danger);">🗑️ ऑल डेटा डिलीट</button>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>रोल नं (क्लिक करें)</th>
+                                <th>छात्र का नाम</th>
+                                <th>पिता का नाम</th>
+                                <th>कक्षा</th>
+                                <th>ग्राम</th>
+                                <th>मोबाइल नं</th>
+                                <th>शिक्षण शुल्क</th>
+                                <th>वाहन शुल्क</th>
+                                <th>गत बकाया</th>
+                                <th>लाइव बकाया</th>
+                                <th>संशोधन (Action)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentDatabaseTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-masterdb" class="tab-content">
+            <div class="card">
+                <h3>🗂️ ऑल-टाइम मास्टर फीस डेटाबेस लॉग्स (पूर्ण विवरणी)</h3>
+                <div style="display:flex; flex-wrap:wrap; gap:15px; margin-bottom:20px; background:#f5f5f5; padding:15px; border-radius:6px; align-items:flex-end;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>खोजें (नाम/रोल नंबर)</label>
+                        <input type="text" id="masterFeesSearchBox" placeholder="मास्टर सर्च..." oninput="generateMasterFeesTable()" style="padding:10px; width:220px; border:1px solid #ccc; border-radius:4px;">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>कक्षा फ़िल्टर</label>
+                        <select id="masterFeesClassFilter" onchange="generateMasterFeesTable()" style="padding:10px; border:1px solid #ccc; border-radius:4px;">
+                            <option value="">सभी कक्षाएं</option>
+                            <option value="LKG">LKG</option>
+                            <option value="UKG">UKG</option>
+                            <script>for(let i=1;i<=12;i++) document.write(`<option value="${i}">कक्षा ${i}</option>`);</script>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>विशिष्ट दिनांक फ़िल्टर</label>
+                        <input type="date" id="masterFeesDateFilter" onchange="generateMasterFeesTable()" style="padding:9px; border:1px solid #ccc; border-radius:4px;">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>माह फ़िल्टर</label>
+                        <select id="masterFeesMonthFilter" onchange="generateMasterFeesTable()" style="padding:10px; border:1px solid #ccc; border-radius:4px;">
+                            <option value="">सभी माह</option>
+                            <option value="01">जनवरी</option><option value="02">फरवरी</option><option value="03">मारर्च</option>
+                            <option value="04">अप्रैल</option><option value="05">मई</option><option value="06">जून</option>
+                            <option value="07">जुलाई</option><option value="08">अगस्त</option><option value="09">सितंबर</option>
+                            <option value="10">अक्टूबर</option><option value="11">नवंबर</option><option value="12">दिसंबर</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>वर्ष फ़िल्टर</label>
+                        <select id="masterFeesYearFilter" onchange="generateMasterFeesTable()" style="padding:10px; border:1px solid #ccc; border-radius:4px;">
+                            <option value="">सभी वर्ष</option>
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                            <option value="2028">2028</option>
+                        </select>
+                    </div>
+                    <button class="action-btn" onclick="exportMasterLogsToExcel()" style="background:#2e7d32; height:40px;">📥 फ़िल्टर्ड Excel डाउनलोड</button>
+                    <button class="action-btn" onclick="clearMasterFilters()" style="background:#757575; height:40px;">🔄 रीसेट</button>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>रोल नं</th>
+                                <th>छात्र का नाम</th>
+                                <th>कक्षा</th>
+                                <th>कुल निर्धारित फीस</th>
+                                <th>कुल जमा फीस</th>
+                                <th>शेष नेट बकाया</th>
+                                <th>अंतिम भुगतान तिथि</th>
+                                <th>भुगतान मोड</th>
+                                <th>एक्शन (Action)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="masterFeesTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-dailyreport" class="tab-content">
+            <div class="card">
+                <h3>📆 दैनिक संकलन विवरण एवं कैश/ऑनलाइन काउंटर विवरण</h3>
+                
+                <div style="display:flex; gap:15px; margin-bottom:20px; background:#f5f5f5; padding:15px; border-radius:6px; align-items:flex-end;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>दैनिक तारीख चुनें</label>
+                        <input type="date" id="reportFilterDate" onchange="generateDailyReportLive(this.value)">
+                    </div>
+                    <button class="action-btn" onclick="generateDailyReportLive(document.getElementById('reportFilterDate').value)" style="background:var(--primary);">📅 तारीख वार शो डेटा</button>
+                    
+                    <div style="border-left:2px solid #ccc; padding-left:15px; display:flex; gap:10px; align-items:flex-end;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>माह/वर्ष फिल्टर</label>
+                            <select id="reportFilterMonth" style="width:120px;">
+                                <option value="01">जनवरी</option><option value="02">फरवरी</option><option value="03">मार्च</option>
+                                <option value="04">अप्रैल</option><option value="05">मई</option><option value="06">जून</option>
+                                <option value="07">जुलाई</option><option value="08">अगस्त</option><option value="09">सितंबर</option>
+                                <option value="10">अक्टूबर</option><option value="11">नवंबर</option><option value="12">दिसंबर</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <select id="reportFilterYear" style="width:100px;">
+                                <option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option>
+                            </select>
+                        </div>
+                        <button class="action-btn" onclick="generateMonthWiseReport()" style="background:#ef6c00;">📅 माहवार डेटा लोड करें</button>
+                    </div>
+                    <button class="action-btn" onclick="exportDailyCollectionToExcel()" style="background:#2e7d32; margin-left:auto;">📥 रिपोर्ट एक्सपोर्ट (Excel)</button>
+                </div>
+
+                <div class="grid-4" style="margin-bottom:25px;">
+                    <div class="widget" style="background:#1565c0;">
+                        <small>कुल संकलित छात्र संख्या</small><br><span id="widgetStudentCount" style="font-size:24px; font-weight:bold;">0</span>
+                    </div>
+                    <div class="widget" style="background:#2e7d32;">
+                        <small>कुल नकद संग्रह (CASH COUNTER)</small><br><span id="widgetCashTotal" style="font-size:24px; font-weight:bold;">₹0</span>
+                    </div>
+                    <div class="widget" style="background:#00838f;">
+                        <small>कुल ऑनलाइन संग्रह (ONLINE UPI)</small><br><span id="widgetOnlineTotal" style="font-size:24px; font-weight:bold;">₹0</span>
+                    </div>
+                    <div class="widget" style="background:#e65100;">
+                        <small>कुल नेट प्राप्ति संग्रह (GRAND TOTAL)</small><br><span id="widgetGrandTotal" style="font-size:24px; font-weight:bold;">₹0</span>
+                    </div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>रसीद संख्या</th>
+                            <th>रोल नंबर</th>
+                            <th>छात्र का नाम</th>
+                            <th>कक्षा</th>
+                            <th>माध्यम</th>
+                            <th>प्राप्त राशि</th>
+                            <th>शेष बकाया</th>
+                            <th>दिनांक</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dailyReportTableBody"></tbody>
+                </table>
+
+                <h3 style="margin-top:40px;">📊 वित्तीय मासिक समरी विजेट्स</h3>
+                <div style="display:flex; gap:15px; margin-bottom:20px;">
+                    <select id="finMonthSelect"><option value="01">जनवरी</option><option value="02">फरवरी</option><option value="03">मार्च</option><option value="04">अप्रैल</option><option value="05">मई</option><option value="06">जून</option><option value="07">जुलाई</option><option value="08">अगस्त</option><option value="09">सितंबर</option><option value="10">अक्टूबर</option><option value="11">नवंबर</option><option value="12">दिसंबर</option></select>
+                    <select id="finYearSelect"><option value="2026">2026</option><option value="2027">2027</option></select>
+                    <button class="action-btn" onclick="generateMonthlyFinancialReport()">लोड समरी</button>
+                </div>
+                <div class="grid-4">
+                    <div class="widget" style="background:#333;"><small>कुल सकल फीस प्राप्ति</small><br><b id="monTotalFees" style="font-size:20px;">₹0</b></div>
+                    <div class="widget" style="background:#c62828;"><small>कुल सामान्य खर्च (Expenses)</small><br><b id="monTotalExpenses" style="font-size:20px;">₹0</b></div>
+                    <div class="widget" style="background:#ef6c00;"><small>कुल शिक्षक वेतन भुगतान</small><br><b id="monTotalSalaries" style="font-size:20px;">₹0</b></div>
+                    <div class="widget" style="background:#2e7d32;"><small>शुद्ध नेट मासिक बैलेंस</small><br><b id="monNetBalance" style="font-size:20px;">₹0</b></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-statement" class="tab-content">
+            <div class="card">
+                <h3>🔍 Master Statement Search Ledger (Student & Teacher)</h3>
+                <div style="display: flex; gap: 15px; margin-bottom: 25px;">
+                    <input type="text" id="statementSearchInput" placeholder="नाम, मोबाइल नं, या रोल नं दर्ज करें..." style="padding: 12px; flex-grow: 1; border: 2px solid var(--primary); border-radius: 4px; font-size: 15px;">
+                    <button class="action-btn" onclick="generateMasterStatement()" style="background: var(--primary); padding: 0 30px;">🔍  स्टेटमेंट खोजें</button>
+                </div>
+
+                <div id="studentStatementArea" style="display: none; border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #fff; margin-bottom: 25px;">
+                    <div style="background: var(--primary); color: white; padding: 10px; margin:-20px -20px 20px -20px; border-radius: 6px 6px 0 0; font-weight: bold;">🧑‍🎓 छात्र प्रोफाइल एवं फीस स्टेटमेंट विवरण</div>
+                    <div class="grid-4" style="margin-bottom: 15px; font-size: 14px; line-height: 1.6;">
+                        <div><b>नाम:</b> <span id="stName"></span></div>
+                        <div><b>पिता का नाम:</b> <span id="stFather"></span></div>
+                        <div><b>कक्षा:</b> <span id="stClass"></span></div>
+                        <div><b>मोबाइल नं:</b> <span id="stMobile"></span></div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr style="background: #e3f2fd;">
+                                <th>भुगतान तिथि</th>
+                                <th>रसीद संख्या</th>
+                                <th>भुगतान माध्यम</th>
+                                <th>प्राप्त जमा राशि (₹)</th>
+                                <th>तत्काल शेष बकाया</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stStatementLogsBody"></tbody>
+                    </table>
+                </div>
+
+                <div id="teacherStatementArea" style="display: none; border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #fff;">
+                    <div style="background: var(--secondary); color: white; padding: 10px; margin:-20px -20px 20px -20px; border-radius: 6px 6px 0 0; font-weight: bold;">🧑‍🏫  शिक्षक वेतन भुगतान लेजर इतिहास</div>
+                    <div style="font-size:15px; margin-bottom:15px;"><b>शिक्षक / स्टाफ सदस्य का नाम:</b> <span id="tcName" style="color:var(--secondary); font-weight:bold;"></span></div>
+                    <table>
+                        <thead>
+                            <tr style="background: #e8f5e9;">
+                                <th>भुगतान तिथि</th>
+                                <th>वेतन माह</th>
+                                <th>भुगतान की गई राशि (₹)</th>
+                                <th>वेतन ट्रांजैक्शन स्थिति</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tcStatementLogsBody"></tbody>
+                    </table>
+                </div>
+
+                <div id="statementBlankMessage" style="text-align: center; color: #777; font-weight: bold; padding: 20px; display: none;"></div>
+            </div>
+        </div>
+
+        <div id="tab-expenses" class="tab-content">
+            <div class="card">
+                <h3>🏫 विद्यालय सामान्य दैनिक खर्च वाउचर (General Expense Register)</h3>
+                <div class="grid-4">
+                    <div class="form-group"><label>व्यय / ट्रांजैक्शन तिथि</label><input type="date" id="expDate"></div>
+                    <div class="form-group">
+                        <label>खर्च हेड श्रेणी (Category)</label>
+                        <select id="expCategory">
+                            <option value="स्कूल बिल्डिंग रेंट">स्कूल बिल्डिंग रेंट</option>
+                            <option value="बिजली/पानी बिल भुगतान">बिजली/पानी बिल भुगतान</option>
+                            <option value="स्टेशनरी / प्रिंटिंग सामग्री खर्च">स्टेशनरी / प्रिंटिंग सामग्री खर्च</option>
+                            <option value="परीक्षा सामग्री / रिपोट कार्ड प्रिंटिंग">परीक्षा सामग्री / रिपोट कार्ड प्रिंटिंग</option>
+                            <option value="विज्ञापन / बैनर / पंपलेट पब्लिसिटी">विज्ञापन / बैनर / पंपलेट पब्लिसिटी</option>
+                            <option value="वाहन/बस डीजल/मरम्मत खर्च">वाहन/बस डीजल/मरम्मत खर्च</option>
+                            <option value="फर्नीचर / अन्य स्कूल मरम्मत">फर्नीचर / अन्य स्कूल मरम्मत</option>
+                            <option value="विविध आकस्मिक खर्च">विविध आकस्मिक खर्च</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>विवरण / रिमार्क टिप्पणी</label><input type="text" id="expDesc" placeholder="खर्च का स्पष्ट विवरण लिखें"></div>
+                    <div class="form-group"><label>कुल व्यय भुगतान राशि (₹) *</label><input type="number" id="expAmount"></div>
+                </div>
+                <div style="display: flex; gap: 20px; margin-bottom: 15px;">
+                    <div class="form-group" style="margin-bottom:0;"><label style="background: #e0e0e0; padding: 8px 15px; border-radius: 4px; cursor: pointer; display: inline-block;">📁  बिल फोटो अपलोड</label><input type="file" id="expBillFile" accept="image/*" onchange="previewExpenseImage(event)" style="display:none;"></div>
+                    <div style="display: flex; align-items: center;"><img id="expImgPreview" src="" style="max-height: 60px; border-radius: 4px; display: none; border: 1px solid #ccc;"></div>
+                </div>
+                <button class="action-btn" onclick="addExpenseRecord()" style="background:var(--danger);">💾 खर्च प्रविष्टि सुरक्षित करें</button>
+
+                <h4 style="margin-top:30px;">📋 सुरक्षित किए गए व्यय / भुगतान वाउचर सूची</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>दिनांक</th>
+                            <th>व्यय श्रेणी</th>
+                            <th>विवरण/रिमार्क</th>
+                            <th>राशि (₹)</th>
+                            <th>अपलोड बिल फोटो</th>
+                            <th>हटाएं</th>
+                        </tr>
+                    </thead>
+                    <tbody id="expensesTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab-paybill" class="tab-content">
+            <div class="card">
+                <h3>🛠️ शिक्षक मासिक वास्तविक पेबिल जनरेशन वाउचर</h3>
+                <div class="grid-4">
+                    <div class="form-group"><label>शिक्षक/स्टाफ का नाम</label><input type="text" id="pbTeacherName"></div>
+                    <div class="form-group">
+                        <label>सैलरी का महीना</label>
+                        <select id="pbSalaryMonth">
+                            <option value="January">जनवरी</option><option value="February">फरवरी</option><option value="March">मार्च</option>
+                            <option value="April">अप्रैल</option><option value="May">मई</option><option value="June">जून</option>
+                            <option value="July">जुलाई</option><option value="August">अगस्त</option><option value="September">सितंबर</option>
+                            <option value="October">अक्टूबर</option><option value="November">नवंबर</option><option value="December">दिसंबर</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>निर्धारित मूल मासिक वेतन (₹)</label><input type="number" id="pbBaseSalary"></div>
+                    <div class="form-group"><label>माह के कुल कार्य दिवस</label><input type="number" id="pbTotalDays" value="30"></div>
+                    <div class="form-group"><label>वास्तविक उपस्थिति दिवस</label><input type="number" id="pbPresentDays"></div>
+                </div>
+                <button class="action-btn" onclick="generatePaybillRecord()" style="background:var(--primary);">⚙️  वास्तविक देय सैलेरी जनरेट करें</button>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:40px; margin-bottom:10px;">
+                    <h4 style="margin:0; color:#333;">📋 जनरेट किए गए वास्तविक स्टाफ पेबिल्स की सूची</h4>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="paybillSearchName" placeholder="शिक्षक का नाम फ़िल्टर..." oninput="loadPaybillsTable()" style="padding:6px; border:1px solid #ccc; border-radius:4px; font-size:13px;">
+                        <select id="paybillSearchMonth" onchange="loadPaybillsTable()" style="padding:6px; border:1px solid #ccc; border-radius:4px; font-size:13px;">
+                            <option value="">सभी महीने</option>
+                            <option value="January">जनवरी</option><option value="February">फरवरी</option><option value="March">मार्च</option>
+                            <option value="April">अप्रैल</option><option value="May">मई</option><option value="June">जून</option>
+                            <option value="July">जुलाई</option><option value="August">अगस्त</option><option value="September">सितंबर</option>
+                            <option value="October">अक्टूबर</option><option value="November">नवंबर</option><option value="December">दिसंबर</option>
+                        </select>
+                    </div>
+                    <button class="action-btn" onclick="exportPaybillsToExcel()" style="background:#2e7d32; padding:6px 15px; font-size:12px;">📥 Paybill Sheet Export</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>शिक्षक का नाम</th>
+                            <th>सैलरी महीना</th>
+                            <th>मूल मासिक वेतन</th>
+                            <th>कुल दिवस</th>
+                            <th>उपस्थिति दिवस</th>
+                            <th>वास्तविक नेट देय सैलरी (₹)</th>
+                            <th>हटाएं</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paybillTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab-teachers" class="tab-content">
+            <div class="card">
+                <h3>🧑‍🏫  शिक्षक मासिक वेतन भुगतान वाउचर प्रविष्टि (Staff Cash Outflow)</h3>
+                <div class="grid-4">
+                    <div class="form-group"><label>वेतन वितरण भुगतान तिथि</label><input type="date" id="salDate"></div>
+                    <div class="form-group">
+                        <label>शिक्षक/स्टाफ सदस्य का नाम</label>
+                        <input type="text" id="salTeacherName" placeholder="स्टाफ का नाम दर्ज करें" oninput="autoFillTeacherSalary()" onchange="autoFillTeacherSalary()">
+                    </div>
+                    <div class="form-group">
+                        <label>वेतन का संबंधित महीना</label>
+                        <select id="salMonth" onchange="autoFillTeacherSalary()">
+                            <option value="January">जनवरी</option><option value="February">फरवरी</option><option value="March">मार्च</option>
+                            <option value="April">अप्रैल</option><option value="May">मई</option><option value="June">जून</option>
+                            <option value="July">जुलाई</option><option value="August">अगस्त</option><option value="September">सितंबर</option>
+                            <option value="October">अक्टूबर</option><option value="November">नवंबर</option><option value="December">दिसंबर</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>वास्तविक भुगतान राशि (₹) *</label><input type="number" id="salAmount" style="border: 2px solid var(--primary); font-weight:bold;"></div>
+                </div>
+                <div class="form-group">
+                    <label>भुगतान की स्थिति / रिमार्क</label>
+                    <select id="salStatus">
+                        <option value="Paid Fully (Cash)">पूर्ण नकद भुगतान किया (Paid Fully Cash)</option>
+                        <option value="Paid Online Bank Transfer">ऑनलाइन बैंक ट्रांसफर (Paid Online)</option>
+                        <option value="Partially Paid Balance Due">आंशिक अग्रिम भुगतान (Partially Paid)</option>
+                    </select>
+                </div>
+                <button class="action-btn" onclick="payTeacherSalary()" style="background:var(--secondary);">💾 वेतन भुगतान वाउचर सुरक्षित करें</button>
+
+                <h4 style="margin-top:40px;">📋 शिक्षक मासिक वेतन वितरण भुगतान लॉग्स विवरण</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>भुगतान तिथि</th>
+                            <th>शिक्षक का नाम</th>
+                            <th>संबंधित महीना</th>
+                            <th>वितरित भुगतान राशि (₹)</th>
+                            <th>भुगतान मोड/स्थिति</th>
+                            <th>हटाएं</th>
+                        </tr>
+                    </thead>
+                    <tbody id="salaryTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab-audit" class="tab-content">
+            <div class="card">
+                <h3>📈 लाइव विद्यालय ऑडिट रिपोर्ट एवं शुद्ध आय-व्यय शीट (Real-Time Balance Ledger)</h3>
+                <div style="display:flex; gap:15px; background:#f5f5f5; padding:15px; border-radius:6px; margin-bottom:25px; align-items:flex-end;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>महीना</label>
+                        <select id="auditFilterMonth">
+                            <option value="">संपूर्ण सत्र समेकित</option>
+                            <option value="01">जनवरी</option><option value="02">फरवरी</option><option value="03">मार्च</option>
+                            <option value="04">अप्रैल</option><option value="05">मई</option><option value="06">जून</option>
+                            <option value="07">जुलाई</option><option value="08">अगस्त</option><option value="09">सितंबर</option>
+                            <option value="10">अक्टूबर</option><option value="11">नवंबर</option><option value="12">दिसंबर</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>वर्ष</label>
+                        <select id="auditFilterYear">
+                            <option value="2026">2026</option><option value="2027">2027</option>
+                        </select>
+                    </div>
+                    <button class="action-btn" onclick="generateAuditReport()" style="background:var(--primary);">📊 लाइव ऑडिट कैलकुलेट करें</button>
+                </div>
+
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr style="background:#f5f5f5;">
+                                <th>ट्रांजैक्शन दिनांक</th>
+                                <th>विवरणी / लेजर हेड</th>
+                                <th style="color:green;">क्रेडिट (आय +)</th>
+                                <th style="color:red;">дебит (व्यय -)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="auditReportTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-settings" class="tab-content">
+            <div class="card">
+                <h3>⚙️ NAHUSH PUBLIC HIGH SCHOOL MOHLA </h3>
+                <P> WELLCOME</P>
+                <P> स्कूल डाइस कोड - 23390302804 </P>
+                <div class="grid-2">
+                    <div style="border:1px dashed #ccc; padding:20px; border-radius:6px;">
+                        <h3 style="margin-top:0; color:var(--primary);">🏫 विद्यालय आधिकारिक लोगो (App Logo)</h3>
+                        <input type="file" id="logoInput" accept="image/*" onchange="previewLogo(event)">
+                    </div>
+                    <div style="border:1px dashed #ccc; padding:20px; border-radius:6px;">
+                        <h3 style="margin-top:0; color:var(--primary);">🖼️ स्कूल सॉफ्टवेयर बैकग्राउंड कस्टमाइज</h3>
+                        <button class="action-btn" onclick="triggerBgUpload()" style="background:#455a64;">🖼️ अपलोड बैकग्राउंड फोटो</button>
+                        <button class="action-btn" onclick="resetBg()" style="background:#e0e0e0; color:black; margin-left:10px;">🔄 रीसेट डिफ़ॉल्ट</button>
+                        <input type="file" id="bgInput" accept="image/*" onchange="previewBg(event)" style="display:none;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div id="receiptModal" class="modal">
+    <div class="modal-content">
+        <span class="close no-print" onclick="closeReceiptModal()">&times;</span>
+        <div id="modalReceiptBody"></div>
+        <div style="text-align:right; margin-top:20px;" class="no-print">
+            <button id="modalWhatsappBtn" class="action-btn" style="background:#25D366; margin-right:10px;">💬 WhatsApp अलर्ट</button>
+            <button class="action-btn" onclick="window.print()" style="background:var(--primary);">🖨️ रसीद प्रिंट करें</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // GLOBAL LOCAL STORAGE ARCHITECTURE DATABASES
+    let globalStudents = [];
+    let globalFeeRecords = [];
+    let globalExpenses = [];
+    let globalPaybills = [];
+    let globalPayments = [];
+
+    function login() {
+        let u = document.getElementById("username").value.trim();
+        let p = document.getElementById("password").value;
+        if(u === "Nahush" && p === "Ram@4797") {
+            localStorage.setItem("schoolSessionLogin", "true");
+            checkLoginStatus();
+        } else {
+            alert("अमान्य एडमिन लॉगिन क्रेडेंशियल!");
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem("schoolSessionLogin");
+        checkLoginStatus();
+    }
+
+    function checkLoginStatus() {
+        if(localStorage.getItem("schoolSessionLogin") === "true") {
+            document.getElementById("loginSection").style.display = "none";
+            document.getElementById("dashboardWrapper").style.display = "flex";
+            initSystem();
+        } else {
+            document.getElementById("loginSection").style.display = "flex";
+            document.getElementById("dashboardWrapper").style.display = "none";
+        }
+    }
+
+    function switchTab(evt, tabId) {
+        document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+        document.querySelectorAll(".menu-btn").forEach(b => b.classList.remove("active"));
+        document.getElementById(tabId).classList.add("active");
+        if(evt) {
+            evt.currentTarget.classList.add("active");
+        } else {
+            let btnId = "btn-" + tabId;
+            if(document.getElementById(btnId)) document.getElementById(btnId).classList.add("active");
+        }
+        
+        let titleMap = {
+            'tab-registration': '📝 नवीन छात्र पंजीकरण फ़ॉर्म काउंटर (STUDENT ENROLLMENT FORM)',
+            'tab-feeentry': '💰 छात्र लाइव फीस संकलन काउंटर वाउचर (LIVE STUDENT FEE TRANSACTION COUNTER)',
+            'tab-database': '📊 छात्र मास्टर डेटाबेस विवरण एवं लाइव बकाया ट्रैकर',
+            'tab-masterdb': '🗂️ ऑल-टाइम मास्टर फीस रसीद ट्रांजैक्शन लॉग्स',
+            'tab-dailyreport': '📆 दैनिक एवं मासिक संकलन विवरण वित्तीय कैश/ऑनलाइन संग्रह',
+            'tab-statement': '🔍 MASTER SEARCH STATEMENT DISCOVER MATRIX',
+            'tab-expenses': '🏫 विद्यालय सामान्य आकस्मिक खर्च डेबिट वाउचर रजिस्टर',
+            'tab-paybill': '🛠️ शिक्षक मासिक वास्तविक देय सैलेरी पेबिल जनरेशन',
+            'tab-teachers': '🧑‍🏫 शिक्षक वेतन वाउचर वितरण भुगतान प्रविष्टि लॉग्स',
+            'tab-audit': '📈 रियल-टाइम विद्यालय आय-व्यय ऑडिट रिपोर्ट तुलन पत्र',
+            'tab-settings': '⚙️ विद्यालय सॉफ्टवेयर इंटरफ़ेस कस्टमाइज़ेशन सेटिंग्स'
+        };
+        document.getElementById("dynamicPageTitle").innerText = titleMap[tabId] || "Nahush Public High School Mohla";
+
+        if(tabId === 'tab-database') {
+            loadStudentsLive();
+        }
+        if(tabId === 'tab-dailyreport') {
+            let today = new Date().toISOString().split('T')[0];
+            document.getElementById('reportFilterDate').value = today;
+            generateDailyReportLive(today);
+        }
+        if(tabId === 'tab-expenses') {
+            loadExpensesTable();
+        }
+        if(tabId === 'tab-paybill') {
+            loadPaybillsTable();
+        }
+        if(tabId === 'tab-teachers') {
+            loadSalaryTable();
+        }
+        if(tabId === 'tab-masterdb') {
+            generateMasterFeesTable();
+        }
+    }
+
+    function sendToFeeCounter(rollNumber) {
+        switchTab(null, 'tab-feeentry');
+        document.getElementById("feeRollNo").value = rollNumber;
+        fetchStudentDetails(rollNumber);
+    }
+
+    let globalExpenseImgBase64 = "";
+
+    function initSystem() {
+        let today = new Date().toISOString().split('T')[0];
+        document.getElementById("payDate").value = today;
+        document.getElementById("expDate").value = today;
+        document.getElementById("salDate").value = today;
+
+        if(localStorage.getItem("customSchoolLogo")){
+            document.getElementById("schoolLogo").src = localStorage.getItem("customSchoolLogo");
+        }
+        if(localStorage.getItem("customSchoolBg")){
+            document.body.style.backgroundImage = `url('${localStorage.getItem("customSchoolBg")}')`;
+        }
+        refreshAllDataFromServer();
+    }
+
+    // ==========================================
+    // GOOGLE DRIVE APP-SCRIPT INTEGRATION LIVE SYNC
+    // ==========================================
+    const DRIVE_DEPLOY_URL = "https://script.google.com/macros/s/AKfycbybLpL3_Ksc_nI6g7UuF9H7_RzHwG_Y2v0bLhI6R-GatMIn-g_B1j-r0DIdI7qjZ0tL/exec";
+
+    function showLoader() { document.getElementById("globalLoader").style.display = "block"; }
+    function hideLoader() { document.getElementById("globalLoader").style.display = "none"; }
+
+    function refreshAllDataFromServer(callback) {
+        showLoader();
+        fetch(`${DRIVE_DEPLOY_URL}?action=getAllData`)
+        .then(res => res.json())
+        .then(res => {
+            globalStudents = res.students || [];
+            globalFeeRecords = res.feeRecords || [];
+            globalExpenses = res.expenses || [];
+            globalPaybills = res.paybills || [];
+            globalPayments = res.payments || [];
+            
+            localStorage.setItem("studentDatabase", JSON.stringify(globalStudents));
+            localStorage.setItem("feeRecords", JSON.stringify(globalFeeRecords));
+            localStorage.setItem("expensesRecords", JSON.stringify(globalExpenses));
+            localStorage.setItem("teacherPaybills", JSON.stringify(globalPaybills));
+            localStorage.setItem("teacherPayments", JSON.stringify(globalPayments));
+            
+            hideLoader();
+            if(callback) callback();
+        })
+        .catch(err => {
+            console.error(err);
+            globalStudents = JSON.parse(localStorage.getItem("studentDatabase")) || [];
+            globalFeeRecords = JSON.parse(localStorage.getItem("feeRecords")) || [];
+            globalExpenses = JSON.parse(localStorage.getItem("expensesRecords")) || [];
+            globalPaybills = JSON.parse(localStorage.getItem("teacherPaybills")) || [];
+            globalPayments = JSON.parse(localStorage.getItem("teacherPayments")) || [];
+            hideLoader();
+            if(callback) callback();
+        });
+    }
+
+    function saveDataToDrive(key, data, successCallback) {
+        showLoader();
+        let payload = { action: "saveKeyData", key: key, data: data };
+        fetch(DRIVE_DEPLOY_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        })
+        .then(() => {
+            localStorage.setItem(key, JSON.stringify(data));
+            hideLoader();
+            if(successCallback) successCallback();
+        })
+        .catch(err => {
+            localStorage.setItem(key, JSON.stringify(data));
+            hideLoader();
+            alert("क्लाउड नेटवर्क अस्थिर है! डेटा ऑफलाइन सुरक्षित हुआ।");
+            if(successCallback) successCallback();
+        });
+    }
+
+    // ==========================================
+    // ENROLLMENT & FEES CALCULATION
+    // ==========================================
+    function calculateRegTotal() {
+        let ann = Number(document.getElementById("regAnnualFee").value) || 0;
+        let bus = Number(document.getElementById("regBusFee").value) || 0;
+        let out = Number(document.getElementById("regOutstandingFee").value) || 0;
+        document.getElementById("regTotalFee").value = ann + bus + out;
+    }
+
+    function registerStudent() {
+        let roll = document.getElementById("regRollNo").value.trim();
+        let name = document.getElementById("regStudentName").value.trim();
+        let father = document.getElementById("regFatherName").value.trim();
+        let cls = document.getElementById("regClass").value;
+        let vil = document.getElementById("regVillage").value.trim();
+        let mob = document.getElementById("regMobile").value.trim();
+        
+        let ann = Number(document.getElementById("regAnnualFee").value) || 0;
+        let bus = Number(document.getElementById("regBusFee").value) || 0;
+        let out = Number(document.getElementById("regOutstandingFee").value) || 0;
+        let tot = Number(document.getElementById("regTotalFee").value) || 0;
+
+        if(!roll || !name || !cls || tot <= 0) {
+            alert("कृपया सभी अनिवार्य फ़ील्ड्स (*) भरें!");
+            return;
+        }
+
+        let existing = globalStudents.find(s => s.rollNo.toString() === roll.toString());
+        if(existing) {
+            existing.studentName = name;
+            existing.fatherName = father;
+            existing.studentClass = cls;
+            existing.villageName = vil;
+            existing.mobileNo = mob;
+            existing.annualFee = ann;
+            existing.busFee = bus;
+            existing.outstandingFee = out;
+            existing.totalFee = tot;
+        } else {
+            globalStudents.push({
+                rollNo: roll, studentName: name, fatherName: father, studentClass: cls,
+                villageName: vil, mobileNo: mob, annualFee: ann, busFee: bus, outstandingFee: out, totalFee: tot
+            });
+        }
+
+        saveDataToDrive("studentDatabase", globalStudents, () => {
+            alert("छात्र का रिकॉर्ड सीधे क्लाउड सर्वर पर सुरक्षित कर लिया गया है।");
+            refreshAllDataFromServer();
+        });
+
+        document.getElementById("regRollNo").value = "";
+        document.getElementById("regStudentName").value = "";
+        document.getElementById("regFatherName").value = "";
+        document.getElementById("regClass").value = "";
+        document.getElementById("regVillage").value = "";
+        document.getElementById("regMobile").value = "";
+        document.getElementById("regAnnualFee").value = "";
+        document.getElementById("regBusFee").value = "";
+        document.getElementById("regOutstandingFee").value = "";
+        document.getElementById("regTotalFee").value = "";
+    }
+
+    // ==========================================
+    // DATABASE TRACKER & DUES CALCULATOR
+    // ==========================================
+    function getCalculatedStudents() {
+        globalStudents.forEach(s => {
+            let totalPaid = globalFeeRecords.filter(r => r.rollNo.toString() === s.rollNo.toString()).reduce((sum, r) => sum + (Number(r.paidFee) || 0), 0);
+            s.currentDue = (Number(s.totalFee) || 0) - totalPaid;
+        });
+        return globalStudents;
+    }
+
+    function loadStudentsLive() {
+        let query = document.getElementById("dbSearchBox").value.trim().toLowerCase();
+        let classFilter = document.getElementById("dbClassFilter").value;
+        let students = getCalculatedStudents();
+        let tbody = document.getElementById("studentDatabaseTable");
+        tbody.innerHTML = "";
+
+        students.sort((a,b) => b.currentDue - a.currentDue);
+
+        let filtered = students.filter(s => {
+            let matchesSearch = s.studentName.toLowerCase().includes(query) || s.rollNo.toString().toLowerCase().includes(query);
+            let matchesClass = classFilter === "" || s.studentClass.toString() === classFilter.toString();
+            return matchesSearch && matchesClass;
+        });
+
+        filtered.forEach(s => {
+            let tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td><span class="clickable-roll" onclick="sendToFeeCounter('${s.rollNo}')">${s.rollNo} ➔</span></td>
+                <td><b>${s.studentName}</b></td>
+                <td>${s.fatherName || '-'}</td>
+                <td>${s.studentClass}</td>
+                <td>${s.villageName || '-'}</td>
+                <td>${s.mobileNo || '-'}</td>
+                <td>₹${s.annualFee || 0}</td>
+                <td>₹${s.busFee || 0}</td>
+                <td>₹${s.outstandingFee || 0}</td>
+                <td style="color:${s.currentDue > 0 ? 'red':'green'}; font-weight:bold;">₹${s.currentDue}</td>
+                <td>
+                    <button class="edit-btn" onclick="editStudent('${s.rollNo}')">Edit</button>
+                    <button class="delete-btn" onclick="deleteStudent('${s.rollNo}')">🗑️</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // Function to load student details back into registration form for editing
+    function editStudent(roll) {
+        let s = globalStudents.find(st => st.rollNo.toString() === roll.toString());
+        if(s) {
+            switchTab(null, 'tab-registration');
+            document.getElementById("regRollNo").value = s.rollNo;
+            document.getElementById("regStudentName").value = s.studentName;
+            document.getElementById("regFatherName").value = s.fatherName || "";
+            document.getElementById("regClass").value = s.studentClass;
+            document.getElementById("regVillage").value = s.villageName || "";
+            document.getElementById("regMobile").value = s.mobileNo || "";
+            document.getElementById("regAnnualFee").value = s.annualFee || 0;
+            document.getElementById("regBusFee").value = s.busFee || 0;
+            document.getElementById("regOutstandingFee").value = s.outstandingFee || 0;
+            document.getElementById("regTotalFee").value = s.totalFee || 0;
+        }
+    }
+
+    function deleteStudent(roll) {
+        if(confirm("क्या आप निश्चित रूप से इस छात्र का पूर्ण रिकॉर्ड सर्वर से डिलीट करना चाहते हैं?")) {
+            globalStudents = globalStudents.filter(s => s.rollNo.toString() !== roll.toString());
+            saveDataToDrive("studentDatabase", globalStudents, () => { loadStudentsLive(); });
+        }
+    }
+
+    function deleteAllStudents() {
+        if(confirm("⚠️ चेतावनी! क्या आप विद्यालय के संपूर्ण छात्र डेटाबेस को पूरी तरह से साफ़ करना चाहते हैं?")) {
+            if(confirm("पुष्टि करें! यह प्रक्रिया वापस नहीं ली जा सकती।")) {
+                globalStudents = [];
+                saveDataToDrive("studentDatabase", globalStudents, () => { loadStudentsLive(); });
+            }
+        }
+    }
+
+    // ==========================================
+    // TRANSACTION FEE ENTRY COUNTER VOUCHERS
+    // ==========================================
+    function fetchStudentDetails(roll) {
+        if(!roll) {
+            document.getElementById("liveLedgerSection").style.display = "none";
+            return;
+        }
+        let s = globalStudents.find(st => st.rollNo.toString() === roll.trim().toString());
+        if(s) {
+            document.getElementById("studentName").value = s.studentName;
+            document.getElementById("fatherName").value = s.fatherName;
+            document.getElementById("studentClass").value = s.studentClass;
+
+            let totalHistoryPaid = globalFeeRecords.filter(r => r.rollNo.toString() === roll.trim().toString()).reduce((sum, r) => sum + (Number(r.paidFee) || 0), 0);
+            let currentRemaining = s.totalFee - totalHistoryPaid;
+
+            document.getElementById("paidFee").value = currentRemaining;
+            document.getElementById("liveLedgerSection").style.display = "block";
+
+            let widgets = document.getElementById("ledgerSummaryWidgets");
+            widgets.innerHTML = `
+                <div style="background:#0d47a1; color:white; padding:12px; border-radius:6px; text-align:center;"><small>कुल निर्धारित फीस</small><br><b>₹${s.totalFee}</b></div>
+                <div style="background:#2e7d32; color:white; padding:12px; border-radius:6px; text-align:center;"><small>कुल जमा फीस</small><br><b>₹${totalHistoryPaid}</b></div>
+                <div style="background:#c62828; color:white; padding:12px; border-radius:6px; text-align:center;"><small>शेष लाइव बकाया</small><br><b>₹${currentRemaining}</b></div>
+            `;
+
+            let historyBody = document.getElementById("liveLedgerTableBody");
+            historyBody.innerHTML = "";
+            let filteredHistory = globalFeeRecords.filter(r => r.rollNo.toString() === roll.trim().toString());
+            filteredHistory.forEach(r => {
+                let tr = document.createElement("tr");
+                tr.innerHTML = `<td>${r.payDate}</td><td>${r.receiptNo}</td><td>${r.paymentMode}</td><td style="color:green; font-weight:bold;">₹${r.paidFee}</td><td>₹${r.balanceFee}</td>`;
+                historyBody.appendChild(tr);
+            });
+        } else {
+            document.getElementById("liveLedgerSection").style.display = "none";
+        }
+    }
+
+    function resetForm() {
+        document.getElementById("feeRollNo").value = "";
+        document.getElementById("liveLedgerSection").style.display = "none";
+    }
+
+    function saveRecord() {
+        let roll = document.getElementById("feeRollNo").value.trim();
+        let sName = document.getElementById("studentName").value;
+        let sClass = document.getElementById("studentClass").value;
+        let amount = Number(document.getElementById("paidFee").value) || 0;
+        let mode = document.getElementById("paymentMode").value;
+        let dt = document.getElementById("payDate").value;
+
+        if(!roll || amount <= 0 || !dt) {
+            alert("कृपया वैध भुगतान राशि और तिथि दर्ज करें!");
+            return;
+        }
+
+        let student = globalStudents.find(st => st.rollNo.toString() === roll.toString());
+        let totalPaidTillNow = globalFeeRecords.filter(r => r.rollNo.toString() === roll.toString()).reduce((sum, r) => sum + (Number(r.paidFee) || 0), 0);
+        let remDue = student.totalFee - (totalPaidTillNow + amount);
+
+        let rNo = "NPHS-" + (1000 + globalFeeRecords.length + 1);
+        let newRecord = {
+            receiptNo: rNo, rollNo: roll, studentName: sName, studentClass: sClass,
+            paymentMode: mode, totalFee: student.totalFee, paidFee: amount, balanceFee: remDue, payDate: dt
+        };
+
+        globalFeeRecords.push(newRecord);
+        saveDataToDrive("feeRecords", globalFeeRecords, () => {
+            fetchStudentDetails(roll);
+            printReceiptPopup(newRecord);
+        });
+    }
+
+    // ==========================================
+    // RECEIPT WINDOW BOX WITH FULL HISTORY
+    // ==========================================
+    function printReceiptPopup(rec) {
+        let student = globalStudents.find(st => st.rollNo.toString() === rec.rollNo.toString());
+        let fatherNameText = student ? (student.fatherName || 'N/A') : 'N/A';
+        
+        // Fee History Table Inside the Print Window Added
+        let historyRecords = globalFeeRecords.filter(r => r.rollNo.toString() === rec.rollNo.toString());
+        let totalPaidAmount = historyRecords.reduce((sum, r) => sum + (Number(r.paidFee) || 0), 0);
+        let remainingBalance = student ? (student.totalFee - totalPaidAmount) : 0;
+        
+        let historyRowsHtml = "";
+        historyRecords.forEach((r, index) => {
+            historyRowsHtml += `
+                <tr style="border:1px solid #333;">
+                    <td style="padding:5px; border:1px solid #333;">${index + 1}</td>
+                    <td style="padding:5px; border:1px solid #333;">${r.payDate}</td>
+                    <td style="padding:5px; border:1px solid #333;">${r.receiptNo}</td>
+                    <td style="padding:5px; border:1px solid #333;">${r.paymentMode}</td>
+                    <td style="padding:5px; border:1px solid #333; font-weight:bold; color:green;">₹${r.paidFee}/-</td>
+                </tr>
+            `;
+        });
+
+        let html = `
+            <div style="border:3px double #1a237e; padding:20px; color:#1a237e; background:#fff;">
+                <div style="text-align:center; margin-bottom:15px;">
+                    <h2 style="margin:0; font-size:22px; text-transform:uppercase;">नहुष पब्लिक हाई स्कूल मोहला</h2>
+                    <p style="margin:3px 0; font-size:12px;">मझौली, जिला - जबलपुर (म.प्र.) | DISE CODE: 23390302804</p>
+                    <h4 style="display:inline-block; border:1px solid #1a237e; padding:3px 12px; margin:10px 0 0 0; background:#f5f5f5;">फीस जमा पावती रसीद (OFFICIAL RECEIPT)</h4>
+                </div>
+                <hr style="border:0; border-top:1px dashed #333;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; font-size:13px; gap:8px 20px; margin-top:10px;">
+                    <div><b>रसीद संख्या:</b> ${rec.receiptNo}</div>
+                    <div style="text-align:right;"><b>भुगतान दिनांक:</b> ${rec.payDate}</div>
+                    <div><b>स्कॉलर/रोल नं:</b> ${rec.rollNo}</div>
+                    <div style="text-align:right;"><b>कक्षा (Class):</b> ${rec.studentClass}</div>
+                    <div><b>छात्र का नाम:</b> ${rec.studentName}</div>
+                    <div style="text-align:right;"><b>पिता का नाम:</b> ${fatherNameText}</div>
+                    <div style="grid-column:span 2;"><b>भुगतान माध्यम:</b> ${rec.paymentMode}</div>
+                </div>
+                
+                <table style="width:100%; border-collapse:collapse; margin-top:15px; text-align:center; font-size:13px;">
+                    <thead>
+                        <tr style="background:#eee; border:1px solid #333;">
+                            <th style="padding:8px; border:1px solid #333;">विवरण</th>
+                            <th style="padding:8px; border:1px solid #333;">प्राप्त राशि (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border:1px solid #333;">
+                            <td style="padding:10px; border:1px solid #333; text-align:left;">स्कूल शिक्षा सत्र फीस संकलन आवंटन (इंस्टॉलमेंट)</td>
+                            <td style="padding:10px; border:1px solid #333; font-weight:bold;">₹${rec.paidFee}/-</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h4 style="margin-top:20px; margin-bottom:5px; font-size:13px; text-align:left;">📋 पूर्ण फीस भुगतान इतिहास तालिका (Complete Payment History)</h4>
+                <table style="width:100%; border-collapse:collapse; text-align:center; font-size:12px; border:1px solid #333;">
+                    <thead>
+                        <tr style="background:#f5f5f5; border:1px solid #333;">
+                            <th style="padding:5px; border:1px solid #333;">क्र.</th>
+                            <th style="padding:5px; border:1px solid #333;">दिनांक</th>
+                            <th style="padding:5px; border:1px solid #333;">रसीद नं</th>
+                            <th style="padding:5px; border:1px solid #333;">माध्यम</th>
+                            <th style="padding:5px; border:1px solid #333;">जमा राशि</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${historyRowsHtml}
+                    </tbody>
+                </table>
+
+                <div style="margin-top:15px; background:#f9f9f9; padding:10px; border:1px solid #333; font-size:13px; line-height:1.5;">
+                    <div><b>कुल निर्धारित वार्षिक फीस संरचना:</b> ₹${student ? student.totalFee : rec.totalFee}/-</div>
+                    <div><b>कुल अब तक जमा फीस महायोग:</b> ₹${totalPaidAmount}/-</div>
+                    <div style="color:red; font-weight:bold;"><b>शेष शुद्ध स्कूल बकाया राशि (Net Due Balance):</b> ₹${remainingBalance}/-</div>
+                </div>
+                
+                <p style="font-size:11px; margin-top:15px; color:#555; text-align:center;">* यह रसीद कंप्यूटर जनित है एवं हस्ताक्षर की आवश्यकता नहीं है।</p>
+        `;
+
+        document.getElementById("modalReceiptBody").innerHTML = html;
+        document.getElementById("receiptModal").style.display = "block";
+
+        document.getElementById("modalWhatsappBtn").onclick = function() {
+            let textMsg = `प्रिय अभिभावक, आपके बच्चे ${rec.studentName} (रोल: ${rec.rollNo}) की फीस राशि ₹${rec.paidFee} सफलता से नहुष पब्लिक हाई स्कूल में जमा हो गई है। शेष बकाया राशि ₹${remainingBalance} है। धन्यवाद!`;
+            window.open(`https://api.whatsapp.com/send?phone=91${student?student.mobileNo:''}&text=${encodeURIComponent(textMsg)}`, '_blank');
+        };
+    }
+
+    function closeReceiptModal() { document.getElementById("receiptModal").style.display = "none"; }
+
+    // ==========================================
+    // ALL-TIME MASTER FEES DATABASE LOG MATRIX
+    // ==========================================
+    function getFilteredMasterRecords() {
+        let query = document.getElementById("masterFeesSearchBox").value.trim().toLowerCase();
+        let classFilter = document.getElementById("masterFeesClassFilter").value;
+        let dateFilter = document.getElementById("masterFeesDateFilter").value;
+        let monthFilter = document.getElementById("masterFeesMonthFilter").value;
+        let yearFilter = document.getElementById("masterFeesYearFilter").value;
+
+        let results = [];
+        globalStudents.forEach(st => {
+            let studentHistory = globalFeeRecords.filter(r => r.rollNo.toString() === st.rollNo.toString());
+            if(studentHistory.length === 0) return;
+
+            let matchesSearch = st.studentName.toLowerCase().includes(query) || st.rollNo.toString().includes(query);
+            let matchesClass = classFilter === "" || st.studentClass.toString() === classFilter.toString();
+
+            let totalPaid = 0;
+            let lastDate = "-";
+            let lastMode = "-";
+            let passDateFilter = true;
+            let passMonthFilter = true;
+            let passYearFilter = true;
+
+            let validTxCount = 0;
+            studentHistory.forEach(r => {
+                let txDate = new Date(r.payDate);
+                let txMonthStr = ("0" + (txDate.getMonth() + 1)).slice(-2);
+                let txYearStr = txDate.getFullYear().toString();
+
+                let mDate = dateFilter === "" || r.payDate === dateFilter;
+                let mMonth = monthFilter === "" || txMonthStr === monthFilter;
+                let mYear = yearFilter === "" || txYearStr === yearFilter;
+
+                if(mDate && mMonth && mYear) {
+                    validTxCount++;
+                }
+                totalPaid += Number(r.paidFee) || 0;
+                lastDate = r.payDate;
+                lastMode = r.paymentMode;
+            });
+
+            if(dateFilter !== "" || monthFilter !== "" || yearFilter !== "") {
+                if(validTxCount === 0) return;
+            }
+
+            if(matchesSearch && matchesClass) {
+                results.push({
+                    rollNo: st.rollNo, studentName: st.studentName, studentClass: st.studentClass,
+                    totalFee: st.totalFee, totalPaid: totalPaid, netRemaining: (st.totalFee - totalPaid),
+                    lastDate: lastDate, lastMode: lastMode
+                });
+            }
+        });
+        return results;
+    }
+
+    function generateMasterFeesTable() {
+        let tbody = document.getElementById("masterFeesTableBody");
+        tbody.innerHTML = "";
+        let records = getFilteredMasterRecords();
+
+        records.forEach(r => {
+            let tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${r.rollNo}</td>
+                <td><b>${r.studentName}</b></td>
+                <td>Class ${r.studentClass}</td>
+                <td>₹${r.totalFee}</td>
+                <td style="color:green; font-weight:bold;">₹${r.totalPaid}</td>
+                <td style="color:red; font-weight:bold;">₹${r.netRemaining}</td>
+                <td>${r.lastDate}</td>
+                <td>${r.lastMode}</td>
+                <td>
+                    <button class="edit-btn" onclick="sendToFeeCounter('${r.rollNo}')">💳 काउंटर</button>
+                    <button class="action-btn" style="padding:4px 10px; font-size:12px;" onclick="printMasterStudentFullReceipt('${r.rollNo}')">Print Receipt</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // Secondary route function to fetch the last log item and structure it inside the pop up logic
+    function printMasterStudentFullReceipt(roll) {
+        let logs = globalFeeRecords.filter(r => r.rollNo.toString() === roll.toString());
+        if(logs.length > 0) {
+            printReceiptPopup(logs[logs.length - 1]);
+        } else {
+            alert("इस छात्र का कोई पेमेंट लॉग प्राप्त नहीं हुआ!");
+        }
+    }
+
+    function clearMasterFilters() {
+        document.getElementById("masterFeesSearchBox").value = "";
+        document.getElementById("masterFeesClassFilter").value = "";
+        document.getElementById("masterFeesDateFilter").value = "";
+        document.getElementById("masterFeesMonthFilter").value = "";
+        document.getElementById("masterFeesYearFilter").value = "";
+        generateMasterFeesTable();
+    }
+
+    function exportMasterLogsToExcel() {
+        let records = getFilteredMasterRecords();
+        let excelData = [["Roll No", "Student Name", "Class", "Total Structure Fee", "Total Paid Fee", "Net Remaining Due", "Last Payment Date", "Last Mode"]];
+        records.forEach(r => excelData.push([r.rollNo, r.studentName, r.studentClass, r.totalFee, r.totalPaid, r.netRemaining, r.lastDate, r.lastMode]));
+        let ws = XLSX.utils.aoa_to_sheet(excelData);
+        let wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "MasterFilteredLogs");
+        XLSX.writeFile(wb, "Master_Fees_Logs_Filtered.xlsx");
+    }
+
+    // ==========================================
+    // DAILY COMPILATION & LIVE COUNTER REPORT
+    // ==========================================
+    function generateDailyReportLive(dateVal) {
+        if(!dateVal) return;
+        let tbody = document.getElementById("dailyReportTableBody");
+        tbody.innerHTML = "";
+
+        let recordsList = globalFeeRecords.filter(r => r.payDate === dateVal);
+        let cashTotal = 0, onlineTotal = 0;
+
+        recordsList.forEach(r => {
+            if(r.paymentMode === "Cash") cashTotal += Number(r.paidFee) || 0;
+            else onlineTotal += Number(r.paidFee) || 0;
+
+            let tr = document.createElement("tr");
+            tr.innerHTML = `<td>${r.receiptNo}</td><td>${r.rollNo}</td><td><b>${r.studentName}</b></td><td>${r.studentClass}</td><td>${r.paymentMode}</td><td style="color:green; font-weight:bold;">₹${r.paidFee}</td><td>₹${r.balanceFee}</td><td>${r.payDate}</td>`;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById("widgetStudentCount").innerText = recordsList.length;
+        document.getElementById("widgetCashTotal").innerText = "₹" + cashTotal;
+        document.getElementById("widgetOnlineTotal").innerText = "₹" + onlineTotal;
+        document.getElementById("widgetGrandTotal").innerText = "₹" + (cashTotal + onlineTotal);
+    }
+
+    function generateMonthWiseReport() {
+        let m = document.getElementById("reportFilterMonth").value;
+        let y = document.getElementById("reportFilterYear").value;
+        let tbody = document.getElementById("dailyReportTableBody");
+        tbody.innerHTML = "";
+
+        let cashTotal = 0, onlineTotal = 0, count = 0;
+        globalFeeRecords.forEach(r => {
+            let txDate = new Date(r.payDate);
+            let txMonthStr = ("0" + (txDate.getMonth() + 1)).slice(-2);
+            let txYearStr = txDate.getFullYear().toString();
+
+            if(txMonthStr === m && txYearStr === y) {
+                count++;
+                if(r.paymentMode === "Cash") cashTotal += Number(r.paidFee) || 0;
+                else onlineTotal += Number(r.paidFee) || 0;
+
+                let tr = document.createElement("tr");
+                tr.innerHTML = `<td>${r.receiptNo}</td><td>${r.rollNo}</td><td><b>${r.studentName}</b></td><td>${r.studentClass}</td><td>${r.paymentMode}</td><td style="color:green; font-weight:bold;">₹${r.paidFee}</td><td>₹${r.balanceFee}</td><td>${r.payDate}</td>`;
+                tbody.appendChild(tr);
+            }
+        });
+
+        document.getElementById("widgetStudentCount").innerText = count;
+        document.getElementById("widgetCashTotal").innerText = "₹" + cashTotal;
+        document.getElementById("widgetOnlineTotal").innerText = "₹" + onlineTotal;
+        document.getElementById("widgetGrandTotal").innerText = "₹" + (cashTotal + onlineTotal);
+    }
+
+    function exportDailyCollectionToExcel() {
+        let tbody = document.getElementById("dailyReportTableBody");
+        let excelRows = [["Receipt No", "Roll No", "Student Name", "Class", "Mode", "Paid Fee", "Remaining Balance", "Payment Date"]];
+        
+        tbody.querySelectorAll("tr").forEach(tr => {
+            let cells = tr.querySelectorAll("td");
+            if(cells.length > 0) {
+                excelRows.push([cells[0].innerText, cells[1].innerText, cells[2].innerText, cells[3].innerText, cells[4].innerText, cells[5].innerText, cells[6].innerText, cells[7].innerText]);
+            }
+        });
+        let ws = XLSX.utils.aoa_to_sheet(excelRows);
+        let wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "CollectionReport");
+        XLSX.writeFile(wb, "Collection_Report_Data.xlsx");
+    }
+
+    function generateMonthlyFinancialReport() {
+        let m = document.getElementById("finMonthSelect").value;
+        let y = document.getElementById("finYearSelect").value;
+        let matchStr = `${y}-${m}`;
+
+        let totalFees = globalFeeRecords.filter(r => r.payDate.startsWith(matchStr)).reduce((sum, r) => sum + (Number(r.paidFee) || 0), 0);
+        let totalExp = globalExpenses.filter(e => e.date.startsWith(matchStr)).reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+        let totalSal = globalPayments.filter(s => s.date.startsWith(matchStr)).reduce((sum, s) => sum + (Number(s.amountPaid) || 0), 0);
+
+        document.getElementById("monTotalFees").innerText = "₹" + totalFees;
+        document.getElementById("monTotalExpenses").innerText = "₹" + totalExp;
+        document.getElementById("monTotalSalaries").innerText = "₹" + totalSal;
+        document.getElementById("monNetBalance").innerText = "₹" + (totalFees - totalExp - totalSal);
+    }
+
+    // ==========================================
+    // MASTER STATEMENT SEARCH ENGINE (FIXED)
+    // ==========================================
+    function generateMasterStatement() {
+        let input = document.getElementById("statementSearchInput").value.trim().toLowerCase();
+        let blankMsg = document.getElementById("statementBlankMessage");
+        let stArea = document.getElementById("studentStatementArea");
+        let tcArea = document.getElementById("teacherStatementArea");
+
+        stArea.style.display = "none";
+        tcArea.style.display = "none";
+        blankMsg.style.display = "none";
+
+        if (!input) {
+            blankMsg.style.display = "block";
+            blankMsg.innerText = "कृपया सर्च बॉक्स में छात्र या शिक्षक का विवरण दर्ज करें।";
+            return;
+        }
+
+        // 1. Check for Student Match
+        let s = globalStudents.find(st => 
+            st.rollNo.toString().toLowerCase() === input ||
+            st.studentName.toLowerCase().includes(input) ||
+            (st.mobileNo && st.mobileNo.toString() === input)
+        );
+
+        // 2. Check for Teacher Match (From payments historical data or paybills)
+        let tNameMatch = "";
+        let historicalPayments = globalPayments.filter(p => p.teacherName.toLowerCase().includes(input));
+        if (historicalPayments.length > 0) {
+            tNameMatch = historicalPayments[0].teacherName;
+        } else {
+            let pbMatch = globalPaybills.find(pb => pb.teacherName.toLowerCase().includes(input));
+            if (pbMatch) tNameMatch = pbMatch.teacherName;
+        }
+
+        if (s) {
+            stArea.style.display = "block";
+            document.getElementById("stName").innerText = s.studentName;
+            document.getElementById("stFather").innerText = s.fatherName || "-";
+            document.getElementById("stClass").innerText = s.studentClass;
+            document.getElementById("stMobile").innerText = s.mobileNo || "-";
+
+            let logsBody = document.getElementById("stStatementLogsBody");
+            logsBody.innerHTML = "";
+            let histories = globalFeeRecords.filter(r => r.rollNo.toString() === s.rollNo.toString());
+            
+            if (histories.length === 0) {
+                logsBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#999;">इस छात्र के द्वारा कोई फीस जमा नहीं की गई है।</td></tr>`;
+            } else {
+                histories.forEach(r => {
+                    let tr = document.createElement("tr");
+                    tr.innerHTML = `<td>${r.payDate}</td><td><b>${r.receiptNo}</b></td><td>${r.paymentMode}</td><td style="color:green; font-weight:bold;">₹${r.paidFee}</td><td>₹${r.balanceFee}</td>`;
+                    logsBody.appendChild(tr);
+                });
+            }
+        } else if (tNameMatch) {
+            tcArea.style.display = "block";
+            document.getElementById("tcName").innerText = tNameMatch;
+
+            let tcBody = document.getElementById("tcStatementLogsBody");
+            tcBody.innerHTML = "";
+            let records = globalPayments.filter(p => p.teacherName.toLowerCase() === tNameMatch.toLowerCase());
+
+            if (records.length === 0) {
+                tcBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#999;">इस शिक्षक को अभी तक कोई भुगतान वाउचर ज़ारी नहीं हुआ है।</td></tr>`;
+            } else {
+                records.forEach(p => {
+                    let tr = document.createElement("tr");
+                    tr.innerHTML = `<td>${p.date}</td><td><b>${p.month}</b></td><td style="color:green; font-weight:bold;">₹${p.amountPaid}</td><td>${p.status}</td>`;
+                    tcBody.appendChild(tr);
+                });
+            }
+        } else {
+            blankMsg.style.display = "block";
+            blankMsg.innerText = "खोजे गए विवरण का कोई रिकॉर्ड सर्वर डेटाबेस मैट्रिक्स में नहीं मिला।";
+        }
+    }
+
+    // ==========================================
+    // EXPENDITURE GENERAL SYSTEM LOGIC
+    // ==========================================
+    function previewExpenseImage(evt) {
+        let file = evt.target.files[0];
+        if(file) {
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                globalExpenseImgBase64 = e.target.result;
+                let p = document.getElementById("expImgPreview");
+                p.src = globalExpenseImgBase64;
+                p.style.display = "block";
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function loadExpensesTable() {
+        let tbody = document.getElementById("expensesTableBody");
+        tbody.innerHTML = "";
+        globalExpenses.forEach((e, index) => {
+            let photoElement = e.billPhoto ? `<img src="${e.billPhoto}" style="max-height:45px; border:1px solid #ccc; border-radius:4px; cursor:pointer;" onclick="window.open('${e.billPhoto}','_blank')" title="क्लिक करके बड़ी फोटो देखें">` : "<span style='color:#999;'>No Photo</span>";
+            let tr = document.createElement("tr");
+            tr.innerHTML = `<td>${e.date}</td><td><b>${e.category}</b></td><td>${e.description || '-'}</td><td style="color:red; font-weight:bold;">₹${e.amount}</td><td>${photoElement}</td><td><button class="delete-btn" onclick="deleteExpense(${index})">🗑️ Delete</button></td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function addExpenseRecord() {
+        let dt = document.getElementById("expDate").value;
+        let cat = document.getElementById("expCategory").value;
+        let desc = document.getElementById("expDesc").value.trim();
+        let amt = Number(document.getElementById("expAmount").value) || 0;
+
+        if(!dt || amt <= 0) {
+            alert("विवरण सही भरें।");
+            return;
+        }
+
+        globalExpenses.push({
+            date: dt, category: cat, description: desc, amount: amt, billPhoto: globalExpenseImgBase64
+        });
+
+        saveDataToDrive("expensesRecords", globalExpenses, () => {
+            document.getElementById("expDesc").value = "";
+            document.getElementById("expAmount").value = "";
+            document.getElementById("expImgPreview").style.display = "none";
+            document.getElementById("expBillFile").value = "";
+            globalExpenseImgBase64 = "";
+            loadExpensesTable();
+        });
+    }
+
+    function deleteExpense(idx) {
+        if(confirm("खर्च रिकॉर्ड डिलीट करें?")) {
+            globalExpenses.splice(idx, 1);
+            saveDataToDrive("expensesRecords", globalExpenses, () => { loadExpensesTable(); });
+        }
+    }
+
+    // ==========================================
+    // REAL-TIME STAFF PAYBILL GENERATOR WORKSPACE
+    // ==========================================
+    function generatePaybillRecord() {
+        let name = document.getElementById("pbTeacherName").value.trim();
+        let mon = document.getElementById("pbSalaryMonth").value;
+        let base = Number(document.getElementById("pbBaseSalary").value) || 0;
+        let totDays = Number(document.getElementById("pbTotalDays").value) || 30;
+        let prDays = Number(document.getElementById("pbPresentDays").value) || 0;
+
+        if(!name || base <= 0 || prDays <= 0) {
+            alert("पेबिल विवरण सही भरें!");
+            return;
+        }
+
+        let net = Math.round((base / totDays) * prDays);
+        
+        let existing = globalPaybills.find(p => p.teacherName.toLowerCase() === name.toLowerCase() && p.salaryMonth === mon);
+        if(existing) {
+            existing.baseSalary = base;
+            existing.totalDays = totDays;
+            existing.presentDays = prDays;
+            existing.netPayable = net;
+        } else {
+            globalPaybills.push({
+                teacherName: name, salaryMonth: mon, baseSalary: base, totalDays: totDays, presentDays: prDays, netPayable: net
+            });
+        }
+
+        saveDataToDrive("teacherPaybills", globalPaybills, () => {
+            alert("मासिक उपस्थिति वास्तविक सैलरी पेबिल जनरेट हुआ।");
+            loadPaybillsTable();
+        });
+    }
+
+    function loadPaybillsTable() {
+        let tbody = document.getElementById("paybillTableBody");
+        tbody.innerHTML = "";
+        
+        // Paybill Real-Time Filters Applied
+        let searchName = document.getElementById("paybillSearchName").value.trim().toLowerCase();
+        let searchMonth = document.getElementById("paybillSearchMonth").value;
+
+        let filteredPaybills = globalPaybills.filter(p => {
+            let mName = p.teacherName.toLowerCase().includes(searchName);
+            let mMonth = searchMonth === "" || p.salaryMonth === searchMonth;
+            return mName && mMonth;
+        });
+
+        filteredPaybills.forEach((p, index) => {
+            let tr = document.createElement("tr");
+            tr.innerHTML = `<td><b>${p.teacherName}</b></td><td>${p.salaryMonth}</td><td>₹${p.baseSalary}</td><td>${p.totalDays} Days</td><td>${p.presentDays} Days</td><td style="color:green; font-weight:bold;">₹${p.netPayable}</td><td><button class="delete-btn" onclick="deletePaybill(${index})">🗑️ Delete</button></td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function deletePaybill(idx) {
+        if(confirm("पेबिल डिलीट करें?")) {
+            globalPaybills.splice(idx, 1);
+            saveDataToDrive("teacherPaybills", globalPaybills, () => { loadPaybillsTable(); });
+        }
+    }
+
+    function exportPaybillsToExcel() {
+        let excelData = [["Staff Member Name", "Salary Month Structure", "Base Ground Salary", "Total Working Days", "Attended Present Days", "Net Payable Salary Amount"]];
+        globalPaybills.forEach(p => {
+            excelData.push([p.teacherName, p.salaryMonth || "", p.baseSalary, p.totalDays, p.presentDays, p.netPayable]);
+        });
+        let ws = XLSX.utils.aoa_to_sheet(excelData);
+        let wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "PaybillsSheet");
+        XLSX.writeFile(wb, "Teacher_Paybill_Calculations.xlsx");
+    }
+
+    // ==========================================
+    // TEACHER SALARY PAYMENT VOUCHER LOGIC & AUTO-FILL
+    // ==========================================
+    function autoFillTeacherSalary() {
+        let name = document.getElementById("salTeacherName").value.trim().toLowerCase();
+        let mon = document.getElementById("salMonth").value;
+        if(name && mon) {
+            let matchedBill = globalPaybills.find(p => p.teacherName.toLowerCase() === name && p.salaryMonth === mon);
+            if(matchedBill) {
+                document.getElementById("salAmount").value = matchedBill.netPayable;
+            }
+        }
+    }
+
+    function loadSalaryTable() {
+        let tbody = document.getElementById("salaryTableBody");
+        tbody.innerHTML = "";
+        globalPayments.forEach((s, index) => {
+            let tr = document.createElement("tr");
+            tr.innerHTML = `<td>${s.date}</td><td><b>${s.teacherName}</b></td><td>${s.month}</td><td style="color:green; font-weight:bold;">₹${s.amountPaid}</td><td>${s.status}</td><td><button class="delete-btn" onclick="deleteSalaryPayment(${index})">🗑️ Delete</button></td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function payTeacherSalary() {
+        let dt = document.getElementById("salDate").value;
+        let name = document.getElementById("salTeacherName").value.trim();
+        let mon = document.getElementById("salMonth").value;
+        let amt = Number(document.getElementById("salAmount").value) || 0;
+        let stat = document.getElementById("salStatus").value;
+
+        if(!dt || !name || amt <= 0) {
+            alert("कृपया सभी फ़ील्ड्स सही से भरें!");
+            return;
+        }
+
+        globalPayments.push({
+            date: dt, teacherName: name, month: mon, amountPaid: amt, status: stat
+        });
+
+        saveDataToDrive("teacherPayments", globalPayments, () => {
+            alert("शिक्षक सैलेरी भुगतान वाउचर सुरक्षित हुआ।");
+            document.getElementById("salTeacherName").value = "";
+            document.getElementById("salAmount").value = "";
+            loadSalaryTable();
+        });
+    }
+
+    function deleteSalaryPayment(idx) {
+        if(confirm("वेतन वाउचर डिलीट करें?")) {
+            globalPayments.splice(idx, 1);
+            saveDataToDrive("teacherPayments", globalPayments, () => { loadSalaryTable(); });
+        }
+    }
+
+    // ==========================================
+    // DYNAMIC AUDIT DISCOVER MAP GENERATION
+    // ==========================================
+    function generateAuditReport() {
+        let mFilter = document.getElementById("auditFilterMonth").value;
+        let yFilter = document.getElementById("auditFilterYear").value;
+        let tbody = document.getElementById("auditReportTableBody");
+        tbody.innerHTML = "";
+
+        let logs = [];
+
+        // Credits from Fee Records
+        globalFeeRecords.forEach(r => {
+            let txDate = new Date(r.payDate);
+            let txM = ("0" + (txDate.getMonth() + 1)).slice(-2);
+            let txY = txDate.getFullYear().toString();
+
+            if((mFilter === "" || txM === mFilter) && (txY === yFilter)) {
+                logs.push({ date: r.payDate, title: `छात्र फीस संकलन रसीद [रसीद: ${r.receiptNo}, छात्र: ${r.studentName}, रोल नं: ${r.rollNo}, कक्षा: ${r.studentClass}]`, cr: Number(r.paidFee)||0, dr: 0 });
+            }
+        });
+
+        // Debits from Expenses
+        globalExpenses.forEach(e => {
+            let txDate = new Date(e.date);
+            let txM = ("0" + (txDate.getMonth() + 1)).slice(-2);
+            let txY = txDate.getFullYear().toString();
+
+            if((mFilter === "" || txM === mFilter) && (txY === yFilter)) {
+                logs.push({ date: e.date, title: `विद्यालय आकस्मिक खर्च भुगतान [श्रेणी: ${e.category}, विवरण: ${e.description || '-'}]`, cr: 0, dr: Number(e.amount)||0 });
+            }
+        });
+
+        // Debits from Salaries distributed
+        globalPayments.forEach(p => {
+            let txDate = new Date(p.date);
+            let txM = ("0" + (txDate.getMonth() + 1)).slice(-2);
+            let txY = txDate.getFullYear().toString();
+
+            if((mFilter === "" || txM === mFilter) && (txY === yFilter)) {
+                logs.push({ date: p.date, title: `शिक्षक/स्टाफ मासिक सैलेरी वितरण भुगतान वाउचर [स्टाफ: ${p.teacherName}, सैलेरी माह: ${p.month}]`, cr: 0, dr: Number(p.amountPaid)||0 });
+            }
+        });
+
+        logs.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+        let totalCr = 0, totalDr = 0;
+        logs.forEach(l => {
+            totalCr += l.cr;
+            totalDr += l.dr;
+            let tr = document.createElement("tr");
+            tr.innerHTML = `<td>${l.date}</td><td>${l.title}</td><td style="color:green; font-weight:bold;">${l.cr > 0 ? '₹'+l.cr : '-'}</td><td style="color:red; font-weight:bold;">${l.dr > 0 ? '₹'+l.dr : '-'}</td>`;
+            tbody.appendChild(tr);
+        });
+
+        let netProfit = totalCr - totalDr;
+        let trSummary = document.createElement("tr");
+        trSummary.style.background = "#eef2f3";
+        trSummary.style.fontWeight = "bold";
+        trSummary.innerHTML = `<td>महायोग (Total)</td><td>कुल क्रेडिट आय और डेबिट व्यय का समेकित योग</td><td style="color:green;">₹${totalCr}</td><td style="color:red;">₹${totalDr}</td>`;
+        tbody.appendChild(trSummary);
+
+        let trNet = document.createElement("tr");
+        trNet.style.background = "#cfd8dc";
+        trNet.style.fontWeight = "bold";
+        trNet.innerHTML = `<td colspan="2">शुद्ध विद्यालय नेट क्लोजिंग बैलेंस खाते में (NET CLOSING PROFIT LOG)</td><td colspan="2" style="text-align:center; color:${netProfit >= 0 ? 'green':'red'}; font-size:16px;">₹${netProfit}</td>`;
+        tbody.appendChild(trNet);
+    }
+
+    // ==========================================
+    // EXCEL MULTI-SHEETS BULK IMPORT LOGIC
+    // ==========================================
+    function importStudentsFromExcel(evt) {
+        let file = evt.target.files[0];
+        if(!file) return;
+
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            let data = new Uint8Array(e.target.result);
+            let workbook = XLSX.read(data, { type: 'array' });
+            let sheetName = workbook.SheetNames[0];
+            let worksheet = workbook.Sheets[sheetName];
+            let json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+            json.forEach((row, i) => {
+                if (i === 0 || !row[0]) return;
+                let roll = row[0];
+                let name = row[1];
+                let fname = row[2];
+                let cls = row[3];
+                let vil = row[4];
+                let mob = row[5];
+                let ann = Number(row[6]) || 0;
+                let bus = Number(row[7]) || 0;
+                let out = Number(row[8]) || 0;
+                let tot = ann + bus + out;
+
+                if(roll && name) {
+                    let sItem = {
+                        rollNo: roll.toString(), studentName: name.toString(), fatherName: fname ? fname.toString() : "",
+                        studentClass: cls ? cls.toString() : "1", villageName: vil ? vil.toString() : "", mobileNo: mob ? mob.toString() : "",
+                        annualFee: ann, busFee: bus, outstandingFee: out, totalFee: tot
+                    };
+                    if(!globalStudents.some(st => st.rollNo.toString() === roll.toString())) {
+                        globalStudents.push(sItem);
+                    }
+                }
+            });
+
+            saveDataToDrive("studentDatabase", globalStudents, () => {
+                alert("एक्सेल शीट का पूरा डेटा क्लाउड पर इम्पोर्ट हो गया है!");
+                refreshAllDataFromServer();
+            });
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function exportStudentsToExcel() {
+        let students = getCalculatedStudents();
+        let excelData = [["Scholar/Roll No", "Student Name", "Father Name", "Class", "Village/City", "Mobile No", "Annual Structure Fee", "Bus Transport Fee", "Previous Dues Outstanding", "Live Dues Balanced Amount"]];
+        
+        students.forEach(s => {
+            excelData.push([s.rollNo, s.studentName, s.fatherName || "", s.studentClass, s.villageName || "", s.mobileNo || "", s.annualFee, s.busFee, s.outstandingFee, s.currentDue]);
+        });
+        let ws = XLSX.utils.aoa_to_sheet(excelData);
+        let wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "StudentsSheet");
+        XLSX.writeFile(wb, "Student_Database_Live_Dues.xlsx");
+    }
+
+    // ==========================================
+    // UI CUSTOM BACKGROUND SETTINGS
+    // ==========================================
+    function previewLogo(evt) {
+        let reader = new FileReader();
+        reader.onload = function(){
+            localStorage.setItem("customSchoolLogo", reader.result);
+            document.getElementById("schoolLogo").src = reader.result;
+        };
+        reader.readAsDataURL(evt.target.files[0]);
+    }
+
+    function triggerBgUpload() { document.getElementById("bgInput").click(); }
+
+    function previewBg(evt) {
+        let reader = new FileReader();
+        reader.onload = function(){
+            localStorage.setItem("customSchoolBg", reader.result);
+            document.body.style.backgroundImage = `url('${reader.result}')`;
+        };
+        reader.readAsDataURL(evt.target.files[0]);
+    }
+
+    function resetBg() {
+        localStorage.removeItem("customSchoolBg");
+        document.body.style.backgroundImage = "none";
+    }
+</script>
+</body>
+</html>
